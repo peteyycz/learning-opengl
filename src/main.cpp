@@ -4,10 +4,10 @@
 #include <GLFW/glfw3.h>
 
 const char *vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec2 aPos;\n"
+    "layout (location = 0) in vec3 aPos;\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);\n"
+    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 0.0);\n"
     "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
@@ -35,6 +35,12 @@ static unsigned int CompileShader(const char* source, GLenum type) {
     }
 
     return id;
+}
+
+void processInput(GLFWwindow *window)
+{
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
 }
 
 static unsigned int CreateShader(const char* vertexShaderSource, const char* fragmentShaderSource) {
@@ -80,7 +86,7 @@ int main(void)
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     /* Create a windowed mode window and its OpenGL context */
-    GLFWwindow* window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL", NULL, NULL);
     if (!window)
     {
         fprintf(stderr, "Failed to open GLFW window.");
@@ -101,9 +107,9 @@ int main(void)
     unsigned int shader = CreateShader(vertexShaderSource, fragmentShaderSource);
 
     float vertices[] = {
-        -1.0f, -0.5f,  // left 
-        1.0f, -0.5f,  // right
-        0.0, 1.0f,  // top 
+        -1.0f, -0.5f, 1.0f,  // left 
+        1.0f, -0.5f, 0.0f, // right
+        0.0, 1.0f, 0.0f,  // top 
     }; 
 
     unsigned int VBO, VAO;
@@ -115,7 +121,7 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
@@ -128,6 +134,8 @@ int main(void)
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+        processInput(window);
+
         /* Render here */
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
