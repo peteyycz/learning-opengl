@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.0)
 cmake_policy(VERSION 3.0)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 project(LearningOpenGL)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
