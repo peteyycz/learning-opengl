@@ -9,11 +9,17 @@ const char *vertexShaderSource = "#version 330 core\n"
     "{\n"
     "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
     "}\0";
-const char *fragmentShaderSource = "#version 330 core\n"
+const char *orangeFragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
     "void main()\n"
     "{\n"
     "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+    "}\n\0";
+const char *blueFragmentShaderSource = "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "void main()\n"
+    "{\n"
+    "   FragColor = vec4(0.0f, 0.0f, 1.0f, 1.0f);\n"
     "}\n\0";
 
 static unsigned int CompileShader(const char* source, GLenum type) {
@@ -132,7 +138,8 @@ int main(void)
 
     printf("OpenGL version: %s", glGetString(GL_VERSION));
 
-    unsigned int shader = CreateShader(vertexShaderSource, fragmentShaderSource);
+    unsigned int orangeShader = CreateShader(vertexShaderSource, orangeFragmentShaderSource);
+    unsigned int blueShader = CreateShader(vertexShaderSource, blueFragmentShaderSource);
 
     float leftTriangleVertices[] = {
         // First Rectangle
@@ -169,12 +176,13 @@ int main(void)
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        /* glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); */
 
         /* Draw our stuff */
-        glUseProgram(shader);
+        glUseProgram(orangeShader);
         glBindVertexArray(leftTriangleVAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized */
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glUseProgram(blueShader);
         glBindVertexArray(rightTriangleVAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized */
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
