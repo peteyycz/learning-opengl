@@ -7,7 +7,7 @@ const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 0.0);\n"
+    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
     "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
@@ -18,7 +18,7 @@ const char *fragmentShaderSource = "#version 330 core\n"
 
 static unsigned int CompileShader(const char* source, GLenum type) {
     unsigned int id = glCreateShader(type);
-    glShaderSource(id, 1, &source, nullptr);
+    glShaderSource(id, 1, &source, NULL);
     glCompileShader(id);
 
     int result;
@@ -69,6 +69,34 @@ static unsigned int CreateShader(const char* vertexShaderSource, const char* fra
     return program;
 }
 
+unsigned int getVertexArrayObject(float vertices[], unsigned int verticesSize, unsigned int indices[], unsigned int indiciesSize) {
+    unsigned int VBO, VAO, EBO;
+
+    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indiciesSize, indices, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+    glBindBuffer(GL_ARRAY_BUFFER, 0); 
+
+    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+    glBindVertexArray(0); 
+
+    return VAO;
+}
+
 int main(void)
 {
     /* Initialize the library */
@@ -106,30 +134,31 @@ int main(void)
 
     unsigned int shader = CreateShader(vertexShaderSource, fragmentShaderSource);
 
-    float vertices[] = {
-        -1.0f, -0.5f, 1.0f,  // left 
-        1.0f, -0.5f, 0.0f, // right
-        0.0, 1.0f, 0.0f,  // top 
-    }; 
+    float leftTriangleVertices[] = {
+        // First Rectangle
+        -0.25f,  0.75f, 0.0f,  // top right
+        -0.25f, -0.25f, 0.0f,  // bottom right
+        -0.75f, -0.25f, 0.0f,  // bottom left
+        -0.75f,  0.75f, 0.0f,   // top left 
+    };
+    unsigned int leftTriangleIndices[] = {  // note that we start from 0!
+        0, 1, 3,   // first triangle
+        1, 2, 3,    // second triangle
+    };
+    unsigned int leftTriangleVAO = getVertexArrayObject(leftTriangleVertices, sizeof(leftTriangleVertices), leftTriangleIndices, sizeof(leftTriangleIndices));
 
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0); 
+    float rightTriangleVertices[] = {
+        // Second Rectangle
+        0.25f,  0.75f, 0.0f,  // top right
+        0.25f, -0.25f, 0.0f,  // bottom right
+        0.75f, -0.25f, 0.0f,  // bottom right
+        0.75f,  0.75f, 0.0f   // top right 
+    };
+    unsigned int rightTriangleIndices[] = {  // note that we start from 0!
+        0, 1, 3,   // first triangle
+        1, 2, 3,    // second triangle
+    };
+    unsigned int rightTriangleVAO = getVertexArrayObject(rightTriangleVertices, sizeof(rightTriangleVertices), rightTriangleIndices, sizeof(rightTriangleIndices));
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -140,10 +169,15 @@ int main(void)
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // draw our first triangle
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+        /* Draw our stuff */
         glUseProgram(shader);
-        glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized */
-        glDrawArrays(GL_TRIANGLES, 0, 6); // set the count to 6 since we're drawing 6 vertices now (2 triangles); not 3!
+        glBindVertexArray(leftTriangleVAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized */
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(rightTriangleVAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized */
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
 
         GLenum error = glGetError();
         if (error != GL_NO_ERROR) {
