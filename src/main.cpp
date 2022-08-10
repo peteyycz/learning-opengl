@@ -136,7 +136,10 @@ int main(void)
         fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
     }
 
-    printf("OpenGL version: %s", glGetString(GL_VERSION));
+    printf("OpenGL version: %s\n", glGetString(GL_VERSION));
+    int nrAttributes;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+    printf("Maximum nr of vertex attributes supported: %d\n", nrAttributes);
 
     unsigned int orangeShader = CreateShader(vertexShaderSource, orangeFragmentShaderSource);
     unsigned int blueShader = CreateShader(vertexShaderSource, blueFragmentShaderSource);
